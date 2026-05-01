@@ -4,6 +4,7 @@ from typing import List
 import yfinance as yf
 
 import config
+import history
 import state
 from tastytrade_client import TastytradeClient, TastytradeError
 
@@ -57,6 +58,19 @@ def run_monitor(client: TastytradeClient) -> List[dict]:
 
         pnl_dollars = (last - entry) * qty * (1 if direction == "long" else -1)
         pnl_pct = (last - entry) / entry * 100 * (1 if direction == "long" else -1)
+        history.record_closed_trade(
+            symbol=sym,
+            direction=direction,
+            quantity=qty,
+            entry_price=entry,
+            stop_price=stop,
+            target_price=target,
+            entry_date=pos.get("opened_on", ""),
+            exit_price=last,
+            exit_reason=reason,
+            pnl_dollars=pnl_dollars,
+            pnl_pct=pnl_pct,
+        )
         state.remove_position(sym)
         closed.append({
             "symbol": sym,
