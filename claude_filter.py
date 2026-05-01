@@ -36,6 +36,7 @@ Respond with ONLY a JSON object on a single line, no prose, no code fences:
 
 
 def _client() -> Anthropic:
+    config.assert_anthropic_configured()
     return Anthropic(api_key=config.ANTHROPIC_API_KEY)
 
 

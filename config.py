@@ -60,17 +60,24 @@ POSITIONS_FILE = "positions.json"
 LOG_FILE = "trader.log"
 
 
-def assert_configured() -> None:
-    """Fail loud if required secrets are missing."""
+def assert_tastytrade_configured() -> None:
+    """Fail loud if tastytrade secrets are missing."""
     missing = []
     if not TASTYTRADE_USERNAME:
         missing.append("TASTYTRADE_USERNAME")
     if not TASTYTRADE_PASSWORD:
         missing.append("TASTYTRADE_PASSWORD")
-    if not ANTHROPIC_API_KEY:
-        missing.append("ANTHROPIC_API_KEY")
     if missing:
         raise RuntimeError(
             f"Missing env vars: {', '.join(missing)}. "
+            "Copy .env.example to .env and fill it in."
+        )
+
+
+def assert_anthropic_configured() -> None:
+    """Fail loud if the Anthropic key is missing."""
+    if not ANTHROPIC_API_KEY:
+        raise RuntimeError(
+            "Missing env var: ANTHROPIC_API_KEY. "
             "Copy .env.example to .env and fill it in."
         )

@@ -68,7 +68,7 @@ class TastytradeClient:
         """Use cached session if valid, else re-auth."""
         if self._load_session():
             return
-        config.assert_configured()
+        config.assert_tastytrade_configured()
         url = f"{self.base_url}/sessions"
         resp = requests.post(
             url,
