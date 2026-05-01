@@ -1,6 +1,7 @@
 """Watch open positions, close on stop / target."""
 from typing import List
 
+import pandas as pd
 import yfinance as yf
 
 import config
@@ -9,13 +10,29 @@ from tastytrade_client import TastytradeClient, TastytradeError
 
 
 def _last_price(symbol: str) -> float | None:
-    try:
-        df = yf.download(symbol, period="2d", interval="1d", progress=False, auto_adjust=True)
+    """Most-recent quote: latest 1-minute bar, falling back to daily close.
+
+    1-minute bars give intraday hits for stops and targets while the market
+    is open. The daily fallback covers weekends and any case where the
+    intraday feed is empty (low-volume names, just-after-open, etc.).
+    """
+    for period, interval in (("1d", "1m"), ("5d", "1d")):
+        try:
+            df = yf.download(
+                symbol,
+                period=period,
+                interval=interval,
+                progress=False,
+                auto_adjust=True,
+            )
+        except Exception:
+            continue
         if df is None or df.empty:
-            return None
+            continue
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
         return float(df["Close"].iloc[-1])
-    except Exception:
-        return None
+    return None
 
 
 def run_monitor(client: TastytradeClient) -> List[dict]:

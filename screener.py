@@ -41,12 +41,9 @@ def _fetch(symbol: str) -> Optional[pd.DataFrame]:
     return df
 
 
-def _score(df: pd.DataFrame) -> Candidate | None:
-    """Score one symbol. Returns None if data is unusable."""
+def _score(df: pd.DataFrame) -> Candidate:
+    """Score one symbol. Caller guarantees df has >=50 rows (see _fetch)."""
     close = df["Close"].astype(float)
-    if len(close) < 50:
-        return None
-
     sma20 = close.rolling(20).mean()
     sma50 = close.rolling(50).mean()
     last = float(close.iloc[-1])
@@ -144,8 +141,6 @@ def run_screener(min_score: Optional[int] = None) -> List[Candidate]:
             print(f"[screener] {sym}: no data, skipped")
             continue
         cand = _score(df)
-        if cand is None:
-            continue
         cand.symbol = sym
         flag = "✓" if cand.score >= threshold else " "
         print(
