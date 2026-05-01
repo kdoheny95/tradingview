@@ -1,0 +1,13 @@
+.env
+.env.local
+*.log
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.session.json
+positions.json
+.DS_Store
+.idea/
+.vscode/
