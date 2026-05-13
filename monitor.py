@@ -102,15 +102,34 @@ def run_monitor(client: TastytradeClient) -> List[dict]:
 
 def print_summary() -> None:
     positions = state.open_positions()
+    # Fetch prices once and reuse for both portfolio totals and the per-position lines.
+    pos_prices = {p["symbol"]: _last_price(p["symbol"]) for p in positions}
+
+    starting = float(config.NOTIONAL_ACCOUNT_SIZE)
+    realized = sum(t["pnl_dollars"] for t in history.all_trades())
+    unrealized = 0.0
+    for p in positions:
+        last = pos_prices[p["symbol"]]
+        if last is None:
+            continue
+        sign = 1 if p["direction"] == "long" else -1
+        unrealized += (last - p["entry_price"]) * p["quantity"] * sign
+    total = starting + realized + unrealized
+    pct = (total - starting) / starting * 100 if starting > 0 else 0.0
+
     print("\n=== Portfolio Summary ===")
-    print(f"Mode:           {config.TASTYTRADE_ENV.upper()}  DRY_RUN={config.DRY_RUN}")
-    print(f"Open positions: {len(positions)} / {config.MAX_OPEN_POSITIONS}")
-    print(f"Trades today:   {state.trades_today()} / {config.MAX_TRADES_PER_DAY}")
+    print(f"Mode:            {config.TASTYTRADE_ENV.upper()}  DRY_RUN={config.DRY_RUN}")
+    print(f"Starting equity: ${starting:,.2f}")
+    print(f"Realized P&L:    ${realized:+,.2f}")
+    print(f"Unrealized P&L:  ${unrealized:+,.2f}")
+    print(f"Total worth:     ${total:,.2f}  ({pct:+.2f}%)")
+    print(f"Open positions:  {len(positions)} / {config.MAX_OPEN_POSITIONS}")
+    print(f"Trades today:    {state.trades_today()} / {config.MAX_TRADES_PER_DAY}")
     if not positions:
         print("(no open positions)")
         return
     for p in positions:
-        last = _last_price(p["symbol"])
+        last = pos_prices[p["symbol"]]
         if last is None:
             print(f"  {p['symbol']:6s} {p['direction']:5s} qty={p['quantity']}  entry=${p['entry_price']:.2f}  (no quote)")
             continue
