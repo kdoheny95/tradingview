@@ -105,23 +105,29 @@ class TastytradeClient:
         }
 
     def _get(self, path: str, params: Optional[dict] = None) -> dict:
-        resp = requests.get(
-            f"{self.base_url}{path}",
-            headers=self._headers(),
-            params=params,
-            timeout=15,
-        )
+        try:
+            resp = requests.get(
+                f"{self.base_url}{path}",
+                headers=self._headers(),
+                params=params,
+                timeout=15,
+            )
+        except requests.exceptions.RequestException as e:
+            raise TastytradeError(f"GET {path} network error: {e}") from e
         if resp.status_code >= 400:
             raise TastytradeError(f"GET {path} -> {resp.status_code}: {resp.text}")
         return resp.json()
 
     def _post(self, path: str, body: dict) -> dict:
-        resp = requests.post(
-            f"{self.base_url}{path}",
-            headers=self._headers(),
-            json=body,
-            timeout=15,
-        )
+        try:
+            resp = requests.post(
+                f"{self.base_url}{path}",
+                headers=self._headers(),
+                json=body,
+                timeout=15,
+            )
+        except requests.exceptions.RequestException as e:
+            raise TastytradeError(f"POST {path} network error: {e}") from e
         if resp.status_code >= 400:
             raise TastytradeError(f"POST {path} -> {resp.status_code}: {resp.text}")
         return resp.json()

@@ -99,7 +99,11 @@ def execute_candidate(candidate: Candidate, client: TastytradeClient) -> TradeRe
                            "position size rounded to 0 (account too small for this stop distance)")
 
     # Claude check
-    verdict = review(candidate, market_context=f"sandbox={config.TASTYTRADE_ENV != 'live'}")
+    try:
+        verdict = review(candidate, market_context=f"sandbox={config.TASTYTRADE_ENV != 'live'}")
+    except Exception as e:
+        return TradeResult(False, candidate.symbol, candidate.direction, qty, entry, stop, target,
+                           f"Claude review failed: {type(e).__name__}: {e}")
     if not verdict.approve:
         return TradeResult(False, candidate.symbol, candidate.direction, qty, entry, stop, target,
                            f"Claude vetoed (conf {verdict.confidence}): {verdict.reason}")

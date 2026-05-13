@@ -36,7 +36,8 @@ Respond with ONLY a JSON object on a single line, no prose, no code fences:
 
 
 def _client() -> Anthropic:
-    return Anthropic(api_key=config.ANTHROPIC_API_KEY)
+    # max_retries=4 covers 429s and 5xx (including 529 Overloaded) with backoff.
+    return Anthropic(api_key=config.ANTHROPIC_API_KEY, max_retries=4)
 
 
 def review(candidate: Candidate, market_context: Optional[str] = None) -> ClaudeVerdict:

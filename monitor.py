@@ -1,4 +1,5 @@
 """Watch open positions, close on stop / target."""
+import time
 from typing import List
 
 import yfinance as yf
@@ -10,13 +11,28 @@ from tastytrade_client import TastytradeClient, TastytradeError
 
 
 def _last_price(symbol: str) -> float | None:
-    try:
-        df = yf.download(symbol, period="2d", interval="1d", progress=False, auto_adjust=True)
-        if df is None or df.empty:
-            return None
-        return float(df["Close"].iloc[-1])
-    except Exception:
-        return None
+    """Fetch the latest close. Tries two yfinance endpoints with retries.
+
+    yfinance's per-symbol calls get rate-limited periodically; falling back
+    between Ticker.history (chart endpoint) and yf.download (download endpoint)
+    plus a couple of retries works around most transient failures.
+    """
+    for attempt in range(3):
+        try:
+            df = yf.Ticker(symbol).history(period="5d", interval="1d", auto_adjust=True)
+            if df is not None and not df.empty:
+                return float(df["Close"].iloc[-1])
+        except Exception:
+            pass
+        try:
+            df = yf.download(symbol, period="5d", interval="1d", progress=False, auto_adjust=True)
+            if df is not None and not df.empty:
+                return float(df["Close"].iloc[-1])
+        except Exception:
+            pass
+        if attempt < 2:
+            time.sleep(1 + attempt)
+    return None
 
 
 def run_monitor(client: TastytradeClient) -> List[dict]:
